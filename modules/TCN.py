@@ -18,13 +18,16 @@ class PureTCN(nn.Module):
             in_emb_size = all_level_embedding_sizes[i]
             out_emb_size = all_level_embedding_sizes[i + 1]
             layers.append(self._add_tcn_module(kernel_size, dilation, stride, in_emb_size, out_emb_size))
+            
 
         self.network = nn.Sequential(*layers)
 
     def _add_tcn_module(self, kernel_size, dilation, stride, in_emb_size, out_emb_size):
+        print("params ", in_emb_size, out_emb_size, kernel_size, stride, dilation)
         return TemporalBlockModule(in_emb_size, out_emb_size, kernel_size, stride, dilation)
 
     def forward(self, x):
+        print(x.shape)
         return self.network(x)
 
 
@@ -47,6 +50,6 @@ if __name__ == '__main__':
     input = torch.from_numpy(
         np.arange(batch_size * n_channels * len_sequence).reshape((batch_size, n_channels, len_sequence))).float()
     print(input.shape)
-    module = PureTCN(num_inputs=batch_size, level_embedding_sizes=(6, 6, 8), kernel_size=kernel_size)
+    module = PureTCN(num_inputs=batch_size, level_embedding_sizes=(6, 7, 8), kernel_size=kernel_size)
     out = module(input)
     print(out.shape)
