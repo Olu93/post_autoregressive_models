@@ -50,6 +50,7 @@ if __name__ == '__main__':
     input = torch.from_numpy(
         np.arange(batch_size * n_channels * len_sequence).reshape((batch_size, n_channels, len_sequence))).float()
     print(input.shape)
-    module = PureTCN(num_inputs=batch_size, level_embedding_sizes=(6, 7, 8), kernel_size=kernel_size)
+    ss = (n_channels, 6, 7, 8)
+    module = PureTCN(num_inputs=batch_size, level_embedding_sizes=ss, kernel_size=kernel_size)
     out = module(input)
     print(out.shape)

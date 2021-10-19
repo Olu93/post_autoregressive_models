@@ -9,7 +9,7 @@ from CausalConvolution import CausalConv1d
 class TemporalBlockModule(nn.Module):
     def __init__(self, in_emb_size, out_emb_size, kernel_size, stride=1, dilation=1):
         super(TemporalBlockModule, self).__init__()
-        self.in_emb_size = in_emb_size
+        self.in_emb_size = in_emb_size # Muss channel sein, ist aber anzahl
         self.out_emb_size = out_emb_size
         self.kernel_size = kernel_size
         self.stride = stride
