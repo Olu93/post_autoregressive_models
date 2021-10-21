@@ -2,15 +2,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from ResidualBlock import ResidualBlockModule
-from TemporalBlock import TemporalBlockModule
+import sys 
+
+if __name__ != '__main__':
+    from modules.TemporalBlock import TemporalBlockModule
+else:
+    from TemporalBlock import TemporalBlockModule
+
 
 
 class PureTCN(nn.Module):
-    def __init__(self, num_inputs, level_embedding_sizes, kernel_size=2, stride=1):
+    def __init__(self, level_embedding_sizes, kernel_size=2, stride=1):
         super(PureTCN, self).__init__()
         layers = []
-        self.n_inputs = num_inputs
         self.n_levels = len(level_embedding_sizes)
 
         for i in range(self.n_levels - 1):
@@ -30,8 +34,8 @@ class PureTCN(nn.Module):
 
 
 class ResidualTCN(PureTCN):
-    def __init__(self, num_inputs, level_embedding_sizes, kernel_size=2, stride=1):
-        super(ResidualTCN, self).__init__(num_inputs, level_embedding_sizes, kernel_size, stride)
+    def __init__(self, level_embedding_sizes, kernel_size=2, stride=1):
+        super(ResidualTCN, self).__init__(level_embedding_sizes, kernel_size, stride)
 
     def forward(self, x):
         return self.network(x)
@@ -48,7 +52,7 @@ if __name__ == '__main__':
     input = torch.from_numpy(
         np.arange(batch_size * n_channels * len_sequence).reshape((batch_size, n_channels, len_sequence))).float()
     print(input.shape)
-    ss = (n_channels, 6, 7, 8, 3)
-    module = ResidualTCN(num_inputs=batch_size, level_embedding_sizes=ss, kernel_size=kernel_size)
+    ss = (n_channels, 6, 7, 6, 10, 10)
+    module = ResidualTCN(level_embedding_sizes=ss, kernel_size=kernel_size)
     out = module(input)
     print(out.shape)

@@ -1,6 +1,8 @@
 from typing import Dict
 from allennlp.data.fields.text_field import TextFieldTensors
 from allennlp.data.vocabulary import Vocabulary
+from allennlp.modules.seq2seq_encoders.seq2seq_encoder import Seq2SeqEncoder
+from allennlp.training.metrics.categorical_accuracy import CategoricalAccuracy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,30 +15,28 @@ from allennlp.nn import util
 class TextTCNModel(Model):
     def __init__(
         self,
-        input_size,
-        embedding_sizes,
         vocab: Vocabulary,
         embedder: TextFieldEmbedder,
-        kernel_size=2,
+        encoder: Seq2SeqEncoder,
     ):
-        super(TextTCNModel, self).__init__()
-        assert embedding_sizes[
-            -1] == input_size, f"Out emb size must be the same as input emb size. Given: {embedding_sizes[-1]}, {input_size}"
         super().__init__(vocab)
         self.embedder = embedder
+        self.encoder = encoder
         num_labels = vocab.get_vocab_size("labels")
-        # self.encoder = nn.Embedding(num_labels, input_size)
-
-        self.encoder = ResidualTCN(input_size, embedding_sizes, kernel_size)
-        self.decoder = nn.Linear(embedding_sizes[-1], num_labels)
+        self.decoder = nn.Linear(self.encoder.get_output_dim(),  num_labels)
+        self.accuracy = CategoricalAccuracy()
 
     def forward(self, text: TextFieldTensors, label: torch.Tensor) -> Dict[str, torch.Tensor]:
         """Input ought to have dimension (N, C_in, L_in), where L_in is the seq_len; here the input is (N, L, C)"""
-        emb = self.embedder(text)
+        # Shape: (batch_size, num_tokens, embedding_dim)
+        embedded_text = self.embedder(text)
         # Shape: (batch_size, num_tokens)
-        mask = util.get_text_field_mask(text) # Check if necessary
-        enc = self.encoder(emb.transpose(1, 2)).transpose(1, 2)
-        logits = self.decoder(enc)
+        mask = util.get_text_field_mask(text)  # Check if necessary
+        # Shape: (batch_size, new_num_tokens, embedding_dim)
+        encoded_text = self.encoder(embedded_text, mask)
+        # print("=====================================")
+        # print(encoded_text.shape)
+        logits = self.decoder(encoded_text)
         # Shape: (batch_size, num_labels)
         probs = torch.nn.functional.softmax(logits)
         # Shape: (1,)

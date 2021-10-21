@@ -3,9 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from CausalConvolution import CausalConv1d
-
-
 class TemporalBlockModule(nn.Module):
     def __init__(self, in_emb_size, out_emb_size, kernel_size, stride=1, dilation=1):
         super(TemporalBlockModule, self).__init__()
@@ -16,27 +13,27 @@ class TemporalBlockModule(nn.Module):
         self.dilation = dilation
         self.run_block = nn.Sequential(*[
             nn.Conv1d(in_emb_size, out_emb_size, kernel_size, stride=stride, dilation=dilation, bias=True),
-            nn.LazyBatchNorm1d(),
+            # nn.BatchNorm1d(out_emb_size),
             nn.ReLU(),
             # nn.Conv1d(out_emb_size, out_emb_size, kernel_size, stride=stride, dilation=dilation, bias=True),
-            # nn.LazyBatchNorm1d(),
+            # nn.BatchNorm1d(out_emb_size),
         ])
 
     def forward(self, input):
-        result = self.run_block(input)
         # print("=============")
         # print("Input shape ",input.shape)
         # print("In and Out ", self.in_emb_size, self.out_emb_size)
         # print("kernel, stride, dilation ", self.kernel_size, self.stride, self.dilation)
         # print("Output shape ",result.shape)
         # print("=============")
+        result = self.run_block(input)
         return result
 
 
 if __name__ == '__main__':
     batch_size = 1
-    embedding_size = 11
-    len_sequence = 10
+    embedding_size = 10
+    len_sequence = 25
     kernel_size = 2
     dilation = 1
     __padding = min([(kernel_size - 1) * dilation, 1])

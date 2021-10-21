@@ -27,7 +27,7 @@ class CausalConv1d(nn.Conv1d):
 if __name__ == '__main__':
     batch_size = 1
     embedding_size = 11
-    len_sequence = 10
+    len_sequence = 5
     kernel_size = 2
     dilation = 1
     __padding = min([(kernel_size - 1) * dilation, 1])

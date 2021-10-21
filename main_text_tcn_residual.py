@@ -1,7 +1,6 @@
 import tempfile
 from typing import Dict, Iterable, List, Tuple
 
-
 from allennlp.data import (
     DataLoader,
     DatasetReader,
@@ -17,10 +16,11 @@ from allennlp.modules.token_embedders import Embedding
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.training import Trainer, GradientDescentTrainer
 from allennlp.training.optimizers import AdamOptimizer
+from encoder.TCNEncoder import TCNEncoder
 from model.SimpleClassifier import SimpleClassifier
+from model.TextTCNModel import TextTCNModel
 
 from reader.TextReader import LanguageModelReader
-
 
 
 def build_dataset_reader() -> DatasetReader:
@@ -47,10 +47,9 @@ def build_model(vocab: Vocabulary) -> Model:
     vocab_size = vocab.get_vocab_size("tokens")
     embedding_vector_size = 10
     embedder = BasicTextFieldEmbedder(
-        {"tokens": Embedding(embedding_dim=embedding_vector_size, num_embeddings=vocab_size)}
-    )
-    encoder = LstmSeq2VecEncoder(input_size=embedding_vector_size, hidden_size=5)
-    return SimpleClassifier(vocab, embedder, encoder)
+        {"tokens": Embedding(embedding_dim=embedding_vector_size, num_embeddings=vocab_size)})
+    encoder = TCNEncoder(embedding_dims=(embedding_vector_size, 10), kernel_size=2)
+    return TextTCNModel(vocab, embedder, encoder)
 
 
 def build_data_loaders(
@@ -75,7 +74,7 @@ def build_trainer(
         serialization_dir=serialization_dir,
         data_loader=train_loader,
         validation_data_loader=dev_loader,
-        num_epochs=10,
+        num_epochs=50,
         optimizer=optimizer,
     )
     return trainer
@@ -100,6 +99,7 @@ def run_training_loop():
         trainer.train()
 
     return model, dataset_reader
+
 
 if __name__ == "__main__":
     run_training_loop()

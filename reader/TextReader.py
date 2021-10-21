@@ -11,10 +11,16 @@ import random
 from tqdm import tqdm
 
 # DEBUG_LEVEL = 0 # No Debug
-# DEBUG_LEVEL = 1 # Simple Mode
-DEBUG_LEVEL = 2  # Quick Mode
+DEBUG_LEVEL = 1 # Simple Mode
+# DEBUG_LEVEL = 2  # Quick Mode
 # DEBUG_LEVEL = 3
-
+MAX_SIZE = 50000
+if DEBUG_LEVEL == 1:
+    MAX_SIZE = 10000 
+if DEBUG_LEVEL == 2:
+    MAX_SIZE = 1000 
+if DEBUG_LEVEL == 3:
+    MAX_SIZE = 250
 
 class LanguageModelReader(DatasetReader):
     TRAIN: Final = "train"
@@ -29,7 +35,7 @@ class LanguageModelReader(DatasetReader):
                  token_indexers: Dict[str, TokenIndexer] = None,
                  max_tokens: int = None,
                  **kwargs):
-        super().__init__(**kwargs, max_instances=1000 if DEBUG_LEVEL > 1 else None)
+        super().__init__(**kwargs, max_instances=MAX_SIZE)
         self.tokenizer = tokenizer or SpacyTokenizer()
         self.sentence_splitter = tokenizer or SpacySentenceSplitter()
         self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
@@ -45,9 +51,8 @@ class LanguageModelReader(DatasetReader):
         return new_object
 
     def init_dataset(self, frac=0.2):
-        suffix = (f"[:{10000}]" if DEBUG_LEVEL > 0 else "")
         dataset = load_dataset(LanguageModelReader.DS_NAME,
-                               split=LanguageModelReader.TRAIN + suffix)
+                               split=LanguageModelReader.TRAIN)
         ds = dataset.shuffle().train_test_split(test_size=frac)
         self.all_datasets = {
             LanguageModelReader.TRAIN: ds['train']['text'],
