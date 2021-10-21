@@ -23,13 +23,13 @@ class TemporalBlockModule(nn.Module):
         ])
 
     def forward(self, input):
-        print("=============")
-        print("Input shape ",input.shape)
-        print("In and Out ", self.in_emb_size, self.out_emb_size)
-        print("kernel, stride, dilation ", self.kernel_size, self.stride, self.dilation)
         result = self.run_block(input)
-        print("Output shape ",result.shape)
-        print("=============")
+        # print("=============")
+        # print("Input shape ",input.shape)
+        # print("In and Out ", self.in_emb_size, self.out_emb_size)
+        # print("kernel, stride, dilation ", self.kernel_size, self.stride, self.dilation)
+        # print("Output shape ",result.shape)
+        # print("=============")
         return result
 
 
