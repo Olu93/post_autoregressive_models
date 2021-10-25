@@ -8,6 +8,7 @@ from allennlp.data import (
     Vocabulary,
 )
 from allennlp.data.data_loaders import SimpleDataLoader
+from allennlp.data.token_indexers.single_id_token_indexer import SingleIdTokenIndexer
 
 from allennlp.models import Model
 from allennlp.modules.seq2vec_encoders.pytorch_seq2vec_wrapper import LstmSeq2VecEncoder
@@ -17,10 +18,9 @@ from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.training import Trainer, GradientDescentTrainer
 from allennlp.training.optimizers import AdamOptimizer
 from encoder.TCNEncoder import TCNEncoder
-from model.SimpleClassifier import SimpleClassifier
 from model.TextTCNModel import TextTCNModel
 
-from reader.TextReader import LanguageModelReader
+from reader.LanguageModelReader import LanguageModelReader
 
 
 def build_dataset_reader() -> DatasetReader:
@@ -48,7 +48,7 @@ def build_model(vocab: Vocabulary) -> Model:
     embedding_vector_size = 10
     embedder = BasicTextFieldEmbedder(
         {"tokens": Embedding(embedding_dim=embedding_vector_size, num_embeddings=vocab_size)})
-    encoder = TCNEncoder(embedding_dims=(embedding_vector_size, 10), kernel_size=2)
+    encoder = TCNEncoder(embedding_dims=(embedding_vector_size, 10, 10, 10, 10, 10, 10), kernel_size=2)
     return TextTCNModel(vocab, embedder, encoder)
 
 

@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-class TemporalBlockModule(nn.Module):
+class ConvolutionalBlock(nn.Module):
     def __init__(self, in_emb_size, out_emb_size, kernel_size, stride=1, dilation=1):
-        super(TemporalBlockModule, self).__init__()
+        super(ConvolutionalBlock, self).__init__()
         self.in_emb_size = in_emb_size # Muss channel sein, ist aber anzahl
         self.out_emb_size = out_emb_size
         self.kernel_size = kernel_size
@@ -41,6 +41,6 @@ if __name__ == '__main__':
         np.arange(batch_size * embedding_size * len_sequence).reshape((batch_size, embedding_size, len_sequence))).float()
     print(f"inputs : {input.shape}")
     print(f"pad_in : {F.pad(input, (__padding, 0)).shape}")
-    module = TemporalBlockModule(in_emb_size=embedding_size, out_emb_size=embedding_size, kernel_size=kernel_size, dilation=1)
+    module = ConvolutionalBlock(in_emb_size=embedding_size, out_emb_size=embedding_size, kernel_size=kernel_size, dilation=1)
     out = module(F.pad(input, (1, 0)))
     print(out.shape)

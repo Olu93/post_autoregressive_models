@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Main EXT",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_ext_lm_tcn.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Main",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_lm_tcn.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: TCN",
+            "type": "python",
+            "request": "launch",
+            "module": "modules.TCN"
+        },
+        {
+            "name": "Python: ResidualBlock",
+            "type": "python",
+            "request": "launch",
+            "module": "modules.ResidualBlock"
+        },
+        {
+            "name": "Python: ConvolutionalBlock",
+            "type": "python",
+            "request": "launch",
+            "module": "modules.ConvolutionalBlock"
+        },
+        {
+            "name": "Python: TCN",
+            "type": "python",
+            "request": "launch",
+            "module": "modules.TCN"
+        }
+    ]
+}

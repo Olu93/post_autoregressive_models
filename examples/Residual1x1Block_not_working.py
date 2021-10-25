@@ -3,13 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from TemporalBlock import TemporalBlockModule
-from CausalConvolution import CausalConv1d
+from modules.ConvolutionalBlock import ConvolutionalBlock
+
 
 class Residual1x1BlockModule(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation=1):
         super(Residual1x1BlockModule, self).__init__()
-        self.temporal_conv = TemporalBlockModule(in_channels, out_channels, kernel_size, stride=1)
+        self.temporal_conv = ConvolutionalBlock(in_channels, out_channels, kernel_size, stride=1)
         self.conv_1x1 = nn.Conv1d(in_channels, out_channels, 1, padding='valid')
         self.conv_1x1_2 = CausalConv1d(out_channels, out_channels, 1)
         

@@ -2,11 +2,12 @@ from typing import Dict
 from allennlp.data.fields.text_field import TextFieldTensors
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.modules.seq2seq_encoders.seq2seq_encoder import Seq2SeqEncoder
+from allennlp.modules.seq2vec_encoders import Seq2VecEncoder
 from allennlp.training.metrics.categorical_accuracy import CategoricalAccuracy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from modules.TCN import ResidualTCN
+from modules.TCN import TemporalConvolutionNetworkModel
 from allennlp.models import Model
 from allennlp.modules import TextFieldEmbedder
 from allennlp.nn import util
@@ -17,7 +18,7 @@ class TextTCNModel(Model):
         self,
         vocab: Vocabulary,
         embedder: TextFieldEmbedder,
-        encoder: Seq2SeqEncoder,
+        encoder: Seq2VecEncoder,
     ):
         super().__init__(vocab)
         self.embedder = embedder
@@ -38,7 +39,8 @@ class TextTCNModel(Model):
         # print(encoded_text.shape)
         logits = self.decoder(encoded_text)
         # Shape: (batch_size, num_labels)
-        probs = torch.nn.functional.softmax(logits)
+        # print(logits.shape, mask.shape)
+        probs = F.softmax(logits) 
         # Shape: (1,)
         loss = torch.nn.functional.cross_entropy(logits, label)
         self.accuracy(logits, label)
