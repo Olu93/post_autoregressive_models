@@ -41,7 +41,7 @@ class ExtensiveLanguageTCNModel(Model):
         )
         self.metrics = {
             "accuracy": CategoricalAccuracy(),
-            "accuracy3": CategoricalAccuracy(top_k=3),
+            "accuracy_top3": CategoricalAccuracy(top_k=3),
         }
 
         initializer(self)
