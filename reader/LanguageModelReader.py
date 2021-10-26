@@ -4,7 +4,7 @@ from allennlp.common.util import END_SYMBOL, START_SYMBOL
 from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer, SpacyTokenizer
-from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
+from allennlp.data.tokenizers.sentence_splitter import SentenceSplitter, SpacySentenceSplitter
 from allennlp.data.instance import Instance
 from allennlp.data.dataset_readers import DatasetReader
 from datasets import load_dataset, Dataset
@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 DEBUG_LEVEL = -1  # Normal
 # DEBUG_LEVEL = 0 # No Debug
-DEBUG_LEVEL = 1 # Simple Mode
+DEBUG_LEVEL = 1  # Simple Mode
 # DEBUG_LEVEL = 2  # Quick Mode
 # DEBUG_LEVEL = 3
 # MAX_SIZE = 50000
@@ -44,12 +44,13 @@ class LanguageModelReader(DatasetReader):
     def __init__(self,
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
+                 sentence_splitter: SentenceSplitter = None,
                  max_tokens: int = None,
                  **kwargs):
         super(LanguageModelReader, self).__init__(**kwargs)
         self.tokenizer = tokenizer or SpacyTokenizer(start_tokens=[START_SYMBOL], end_tokens=[END_SYMBOL])
-        self.sentence_splitter = tokenizer or SpacySentenceSplitter()
-        self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer(lowercase_tokens=True)}
+        self.sentence_splitter = sentence_splitter or SpacySentenceSplitter()
+        self.token_indexers = {"tokens": token_indexers} or {"tokens": SingleIdTokenIndexer(lowercase_tokens=True)}
         self.max_tokens = max_tokens
         self.all_datasets: Dict[str, Dataset] = None
 
@@ -62,12 +63,15 @@ class LanguageModelReader(DatasetReader):
         return new_object
 
     def init_dataset(self, frac=0.2):
-        dataset = load_dataset(LanguageModelReader.DS_NAME, split=LanguageModelReader.TRAIN)
+        dataset = load_dataset(LanguageModelReader.DS_NAME, split=f"{LanguageModelReader.TRAIN}[:{self.max_instances}]").map(self._cleanup)
         ds = dataset.shuffle().train_test_split(test_size=frac)
         self.all_datasets = {
-            LanguageModelReader.TRAIN: ds['train']['text'],
-            LanguageModelReader.VAL: ds['test']['text'],
-            LanguageModelReader.TEST: load_dataset(LanguageModelReader.DS_NAME, split=LanguageModelReader.TEST)['text'],
+            LanguageModelReader.TRAIN:
+            ds['train']['text'],
+            LanguageModelReader.VAL:
+            ds['test']['text'],
+            LanguageModelReader.TEST:
+            load_dataset(LanguageModelReader.DS_NAME, split=f"{LanguageModelReader.TEST}[:{self.max_instances}]").map(self._cleanup)['text'],
         }
 
     def load_dataset(self, set_type: str):
@@ -96,6 +100,9 @@ class LanguageModelReader(DatasetReader):
             text_field = TextField(text, self.token_indexers)
             label_field = LabelField(str(next_word), skip_indexing=False)
             yield Instance({"text": text_field, "label": label_field})
+
+    def _cleanup(self, instance):
+        return {'text': instance['text'].replace("<br>", "").replace("<br />", ""), 'label': instance['label']}
 
 
 if __name__ == "__main__":

@@ -72,10 +72,10 @@ class ExtensiveLanguageModelReader(LanguageModelReader):
         """
         fields: Dict[str, Field] = {}
         sequence = TextField(prev_words, self.token_indexers)
-        fields["tokens"] = sequence
+        fields["text"] = sequence
         fields["metadata"] = MetadataField({"words": [x.text for x in prev_words]})
         if next_words is not None:
-            fields["tags"] = SequenceLabelField([lbl.text for lbl in next_words], sequence)
+            fields["labels"] = SequenceLabelField([lbl.text for lbl in next_words], sequence)
         return Instance(fields)
 
 

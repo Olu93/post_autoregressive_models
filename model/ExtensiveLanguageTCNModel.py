@@ -49,19 +49,19 @@ class ExtensiveLanguageTCNModel(Model):
     @overrides
     def forward(
         self,  # type: ignore
-        tokens: TextFieldTensors,
-        tags: torch.LongTensor = None,
+        text: TextFieldTensors,
+        labels: torch.LongTensor = None,
         metadata: List[Dict[str, Any]] = None,
         ignore_loss_on_o_tags: bool = False,
     ) -> Dict[str, torch.Tensor]:
         """Input ought to have dimension (N, C_in, L_in), where L_in is the seq_len; here the input is (N, L, C)"""
         # Shape: (batch_size, num_tokens, embedding_dim)
         # print("=====================================")
-        embedded_text = self.embedder(tokens)
+        embedded_text = self.embedder(text)
         batch_size, sequence_length, _ = embedded_text.size()
 
         # Shape: (batch_size, num_tokens)
-        mask = util.get_text_field_mask(tokens)  # Check if necessary
+        mask = util.get_text_field_mask(text)  # Check if necessary
         # Shape: (batch_size, new_num_tokens, embedding_dim)
         encoded_text = self.encoder(embedded_text, mask)
         # print(encoded_text.shape) - (batch_size, new_num_tokens, embedding_dim)
@@ -74,15 +74,15 @@ class ExtensiveLanguageTCNModel(Model):
             dim=-1,
         ).view([batch_size, sequence_length, self.num_classes])
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
-        if tags is not None:
+        if labels is not None:
             if ignore_loss_on_o_tags:
                 o_tag_index = self.vocab.get_token_index("O", namespace=self.label_namespace)
-                tag_mask = mask & (tags != o_tag_index)
+                tag_mask = mask & (labels != o_tag_index)
             else:
                 tag_mask = mask
-            loss = util.sequence_cross_entropy_with_logits(logits, tags, tag_mask)
+            loss = util.sequence_cross_entropy_with_logits(logits, labels, tag_mask)
             for metric in self.metrics.values():
-                metric(logits, tags, mask)
+                metric(logits, labels, mask)
             output_dict["loss"] = loss
         return output_dict
 
