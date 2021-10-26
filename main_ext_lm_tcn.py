@@ -1,6 +1,5 @@
 import tempfile
 from typing import Dict, Iterable, List, Tuple
-
 from allennlp.data import (
     DataLoader,
     DatasetReader,
@@ -8,7 +7,7 @@ from allennlp.data import (
     Vocabulary,
 )
 from allennlp.data.data_loaders import SimpleDataLoader
-
+import numpy as np
 from allennlp.models import Model
 from allennlp.modules.feedforward import FeedForward
 from allennlp.modules.seq2vec_encoders.pytorch_seq2vec_wrapper import LstmSeq2VecEncoder
@@ -21,13 +20,36 @@ from encoder.ExtensiveTCNEncoder import ExtensiveTCNEncoder
 from encoder.TCNEncoder import TCNEncoder
 from model.ExtensiveLanguageTCNModel import ExtensiveLanguageTCNModel
 from model.TextTCNModel import TextTCNModel
+from predictor.Predictor import ExtensiveLanguageModelPredictor
 
 from reader.ExtensiveLanguageModelReader import ExtensiveLanguageModelReader
 from reader.LanguageModelReader import LanguageModelReader
+import torch
 
+
+DEBUG_LEVEL = -1  # Normal
+# DEBUG_LEVEL = 0 # No Debug
+# DEBUG_LEVEL = 1 # Simple Mode
+DEBUG_LEVEL = 2  # Quick Mode
+# DEBUG_LEVEL = 3 # Super quick mode
+# MAX_SIZE = 50000
+
+# Maxsize is...
+# 942210it [44:12, 355.23it/s]
+# 8916it [00:21, 406.60it/s]
+MAX_SIZE = 50000
+
+if DEBUG_LEVEL == 0:
+    MAX_SIZE = None
+if DEBUG_LEVEL == 1:
+    MAX_SIZE = 10000
+if DEBUG_LEVEL == 2:
+    MAX_SIZE = 1000
+if DEBUG_LEVEL == 3:
+    MAX_SIZE = 250
 
 def build_dataset_reader() -> DatasetReader:
-    return ExtensiveLanguageModelReader()
+    return ExtensiveLanguageModelReader(max_instances=MAX_SIZE)
 
 
 def read_data(reader: DatasetReader, re_init=True, frac=0.01) -> Tuple[List[Instance], List[Instance]]:
@@ -90,6 +112,7 @@ def run_training_loop():
 
     vocab = build_vocab(train_data + dev_data)
     model = build_model(vocab)
+    model = model.to(device='cuda' if torch.cuda.is_available() else 'cpu')
 
     train_loader, dev_loader = build_data_loaders(train_data, dev_data)
     train_loader.index_with(vocab)
@@ -101,8 +124,31 @@ def run_training_loop():
         trainer = build_trainer(model, serialization_dir, train_loader, dev_loader)
         trainer.train()
 
+    predictor = ExtensiveLanguageModelPredictor(model, dataset_reader)
+    test_input_var = "A good"
+    qualitative_model_test(dataset_reader, vocab, predictor, test_input_var)
+    test_input_var = "My home is"
+    qualitative_model_test(dataset_reader, vocab, predictor, test_input_var)
+    test_input_var = "That is a"
+    qualitative_model_test(dataset_reader, vocab, predictor, test_input_var)
+    test_input_var = "I love"
+    qualitative_model_test(dataset_reader, vocab, predictor, test_input_var)
+    test_input_var = "You can use a lot of"
+    qualitative_model_test(dataset_reader, vocab, predictor, test_input_var)
+
+
     return model, dataset_reader
+
+
+def qualitative_model_test(dataset_reader, vocab, predictor, test_input_var):
+    output = predictor.predict(test_input_var)
+    probs = output["class_probabilities"][-1]
+    print(
+        dataset_reader.tokenizer.tokenize(test_input_var)[:-1] + [vocab.get_token_from_index(np.argmax(probs), "labels")],
+        np.max(probs),
+    )
 
 
 if __name__ == "__main__":
     run_training_loop()
+# %%

@@ -9,6 +9,15 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/main_ext_lm_tcn.py",
+            "env": {"PYTHONPATH": "${workspaceRoot}"},
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Test",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/test.py",
+            "env": {"PYTHONPATH": "${workspaceRoot}"},
             "console": "integratedTerminal"
         },
         {

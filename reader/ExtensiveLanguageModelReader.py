@@ -15,12 +15,11 @@ from overrides import overrides
 
 from reader.LanguageModelReader import LanguageModelReader
 
-
 DEBUG_LEVEL = -1  # Normal
 # DEBUG_LEVEL = 0 # No Debug
-DEBUG_LEVEL = 1 # Simple Mode
+# DEBUG_LEVEL = 1 # Simple Mode
 # DEBUG_LEVEL = 2  # Quick Mode
-# DEBUG_LEVEL = 3 # Super quick mode
+DEBUG_LEVEL = 3  # Super quick mode
 # MAX_SIZE = 50000
 
 # Maxsize is...
@@ -41,7 +40,6 @@ if DEBUG_LEVEL == 3:
 class ExtensiveLanguageModelReader(LanguageModelReader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.max_instances = MAX_SIZE
 
     def load_dataset(self, set_type: str):
         is_allowed = any([set_type.startswith(prefix) for prefix in ExtensiveLanguageModelReader.allowed])
@@ -68,7 +66,7 @@ class ExtensiveLanguageModelReader(LanguageModelReader):
             yield self.text_to_instance(prev_words, next_words)
 
     @overrides
-    def text_to_instance(self, prev_words: List[Token], next_words: List[Token]) -> Instance:
+    def text_to_instance(self, prev_words: List[Token], next_words: List[Token] = None) -> Instance:
         """
         We take `pre-tokenized` input here, because we don't have a tokenizer in this class.
         """

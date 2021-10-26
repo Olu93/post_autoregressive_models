@@ -1,5 +1,6 @@
 from re import DEBUG
 from typing import Dict, Iterable, Final
+from allennlp.common.util import END_SYMBOL, START_SYMBOL
 from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer, SpacyTokenizer
@@ -45,11 +46,10 @@ class LanguageModelReader(DatasetReader):
                  token_indexers: Dict[str, TokenIndexer] = None,
                  max_tokens: int = None,
                  **kwargs):
-        super().__init__(**kwargs)
-        self.max_instances = MAX_SIZE
-        self.tokenizer = tokenizer or SpacyTokenizer()
+        super(LanguageModelReader, self).__init__(**kwargs)
+        self.tokenizer = tokenizer or SpacyTokenizer(start_tokens=[START_SYMBOL], end_tokens=[END_SYMBOL])
         self.sentence_splitter = tokenizer or SpacySentenceSplitter()
-        self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
+        self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer(lowercase_tokens=True)}
         self.max_tokens = max_tokens
         self.all_datasets: Dict[str, Dataset] = None
 

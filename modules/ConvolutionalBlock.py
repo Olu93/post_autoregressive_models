@@ -12,11 +12,13 @@ class ConvolutionalBlock(nn.Module):
         self.stride = stride
         self.dilation = dilation
         self.run_block = nn.Sequential(*[
-            nn.Conv1d(in_emb_size, out_emb_size, kernel_size, stride=stride, dilation=dilation, bias=True),
+            nn.Conv1d(in_emb_size, out_emb_size, kernel_size, stride=stride, dilation=dilation, bias=False),
             # nn.BatchNorm1d(out_emb_size),
+            # nn.LayerNorm(out_emb_size),
             nn.ReLU(),
-            # nn.Conv1d(out_emb_size, out_emb_size, kernel_size, stride=stride, dilation=dilation, bias=True),
-            # nn.BatchNorm1d(out_emb_size),
+            # nn.Conv1d(out_emb_size, out_emb_size, kernel_size, stride=stride, dilation=dilation, bias=False),
+            # nn.LayerNorm(out_emb_size),
+            nn.BatchNorm1d(out_emb_size),
         ])
 
     def forward(self, input):
