@@ -56,7 +56,7 @@ class ExtensiveLanguageModelReader(LanguageModelReader):
             ds = (line for line in lines if len(line) > 2)
         if set_type in [ExtensiveLanguageModelReader.TEST]:
             ds = (line[:i] for line in lines for i in range(2, len(line)) if len(line) > 2)
-
+        
         return ds
 
     def _read(self, file_path: str) -> Iterable[Instance]:

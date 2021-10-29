@@ -7,6 +7,7 @@ from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer, SpacyTokeni
 from allennlp.data.tokenizers.sentence_splitter import SentenceSplitter, SpacySentenceSplitter
 from allennlp.data.instance import Instance
 from allennlp.data.dataset_readers import DatasetReader
+from allennlp.data.vocabulary import Vocabulary
 from datasets import load_dataset, Dataset
 import random
 from tqdm import tqdm
@@ -45,12 +46,14 @@ class LanguageModelReader(DatasetReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = None,
+                 vocab: Vocabulary = None,
                  max_tokens: int = None,
                  **kwargs):
         super(LanguageModelReader, self).__init__(**kwargs)
         self.tokenizer = tokenizer or SpacyTokenizer(start_tokens=[START_SYMBOL], end_tokens=[END_SYMBOL])
         self.sentence_splitter = sentence_splitter or SpacySentenceSplitter()
         self.token_indexers = {"tokens": token_indexers} or {"tokens": SingleIdTokenIndexer(lowercase_tokens=True)}
+        self.vocab = vocab or Vocabulary()
         self.max_tokens = max_tokens
         self.all_datasets: Dict[str, Dataset] = None
 
@@ -63,7 +66,7 @@ class LanguageModelReader(DatasetReader):
         return new_object
 
     def init_dataset(self, frac=0.2):
-        dataset = load_dataset(LanguageModelReader.DS_NAME, split=f"{LanguageModelReader.TRAIN}[:{self.max_instances}]").map(self._cleanup)
+        dataset = load_dataset(LanguageModelReader.DS_NAME, split=f"{LanguageModelReader.TRAIN}").map(self._cleanup)
         ds = dataset.shuffle().train_test_split(test_size=frac)
         self.all_datasets = {
             LanguageModelReader.TRAIN:
@@ -71,7 +74,7 @@ class LanguageModelReader(DatasetReader):
             LanguageModelReader.VAL:
             ds['test']['text'],
             LanguageModelReader.TEST:
-            load_dataset(LanguageModelReader.DS_NAME, split=f"{LanguageModelReader.TEST}[:{self.max_instances}]").map(self._cleanup)['text'],
+            load_dataset(LanguageModelReader.DS_NAME, split=f"{LanguageModelReader.TEST}").map(self._cleanup)['text'],
         }
 
     def load_dataset(self, set_type: str):
@@ -84,7 +87,7 @@ class LanguageModelReader(DatasetReader):
         ds = self.all_datasets.get(set_type)
 
         sentence_sets = (self.sentence_splitter.split_sentences(txt) for txt in ds)
-        lines = (self.tokenizer.tokenize(line) for sent in sentence_sets for line in sent)
+        lines = (self.tokenizer.tokenize(line.strip()) for sent in sentence_sets for line in sent)
         if set_type in [LanguageModelReader.TRAIN, LanguageModelReader.VAL]:
             ds = (line[:random.randint(2, len(line))] for line in lines if len(line) > 2 for _ in range(3))
         if set_type in [LanguageModelReader.TEST]:

@@ -57,6 +57,8 @@ class ExtensiveLanguageTCNModel(Model):
         """Input ought to have dimension (N, C_in, L_in), where L_in is the seq_len; here the input is (N, L, C)"""
         # Shape: (batch_size, num_tokens, embedding_dim)
         # print("=====================================")
+        text = util.move_to_device(text, self._get_prediction_device())
+        labels = util.move_to_device(labels, self._get_prediction_device())
         embedded_text = self.embedder(text)
         batch_size, sequence_length, _ = embedded_text.size()
 

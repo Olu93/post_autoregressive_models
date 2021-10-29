@@ -1,3 +1,6 @@
+import io
+import json
+import pathlib
 import tempfile
 from typing import Dict, Iterable, List, Tuple, Type
 from allennlp.common.util import END_SYMBOL, START_SYMBOL
@@ -13,6 +16,7 @@ from allennlp.data.token_indexers.token_indexer import TokenIndexer
 from allennlp.data.tokenizers.sentence_splitter import SentenceSplitter, SpacySentenceSplitter
 from allennlp.data.tokenizers.spacy_tokenizer import SpacyTokenizer
 from allennlp.data.tokenizers.tokenizer import Tokenizer
+from allennlp.data.vocabulary import DEFAULT_OOV_TOKEN
 import numpy as np
 from allennlp.models import Model
 from allennlp.modules.feedforward import FeedForward
@@ -34,8 +38,8 @@ import torch
 
 DEBUG_LEVEL = -1  # Normal
 # DEBUG_LEVEL = 0 # No Debug
-# DEBUG_LEVEL = 1 # Simple Mode
-# DEBUG_LEVEL = 2  # Quick Mode
+DEBUG_LEVEL = 1  # Simple Mode
+DEBUG_LEVEL = 2  # Quick Mode
 DEBUG_LEVEL = 3  # Super quick mode
 # MAX_SIZE = 50000
 
@@ -59,10 +63,11 @@ class ExtensiveRunner():
         self,
         reader: LanguageModelReader,
         num_epochs: int = 10,
+        device: str = None,
     ) -> None:
         self.reader = reader
         self.num_epochs = num_epochs
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = device or 'cuda' if torch.cuda.is_available() else 'cpu'
 
     def read_data(self, reader: DatasetReader, re_init=True, frac=0.01) -> Tuple[List[Instance], List[Instance]]:
         print('Initializing data')
@@ -73,16 +78,17 @@ class ExtensiveRunner():
         validation_data = list(reader.read(LanguageModelReader.VAL))
         return training_data, validation_data
 
-    def build_vocab(self, instances: Iterable[Instance]) -> Vocabulary:
+    def build_vocab(self, instances: Iterable[Instance], vocab: Vocabulary = None) -> Vocabulary:
         print("Building the vocabulary")
-        return Vocabulary.from_instances(instances)
+        vocab.extend_from_instances(instances)
+        return vocab
 
     def build_model(self, vocab: Vocabulary) -> Model:
         print("Building the model")
         vocab_size = vocab.get_vocab_size("tokens")
         embedding_vector_size = 30
         embedder = BasicTextFieldEmbedder(
-            {"tokens": Embedding(embedding_dim=embedding_vector_size, num_embeddings=vocab_size)})
+            {"tokens": Embedding(embedding_dim=embedding_vector_size, num_embeddings=vocab_size).to(self.device)})
         encoder = ExtensiveTCNEncoder(embedding_dims=(embedding_vector_size, 10, 10, 10), kernel_size=2)
         return ExtensiveLanguageTCNModel(vocab, embedder, encoder)
 
@@ -114,18 +120,18 @@ class ExtensiveRunner():
         )
         return trainer
 
-    def run_training_loop(self, model: Model = None):
-        dataset_reader = self.reader
+    def run_training_loop(self, model: Model = None, reader: DatasetReader = None):
+        self.reader = self.reader if not reader else reader
 
-        train_data, dev_data = self.read_data(dataset_reader)
+        train_data, dev_data = self.read_data(self.reader)
 
-        vocab = self.build_vocab(train_data + dev_data)
-        model = self.build_model(vocab) if model is None else model
+        # self.reader.vocab = self.build_vocab(train_data + dev_data, self.reader.vocab)
+        model = self.build_model(self.reader.vocab) if model is None else model
         model = model.to(self.device)
 
         train_loader, dev_loader = self.build_data_loaders(train_data, dev_data)
-        train_loader.index_with(vocab)
-        dev_loader.index_with(vocab)
+        train_loader.index_with(self.reader.vocab)
+        dev_loader.index_with(self.reader.vocab)
 
         # You obviously won't want to create a temporary file for your training
         # results, but for execution in binder for this guide, we need to do this.
@@ -133,23 +139,40 @@ class ExtensiveRunner():
             trainer = self.build_trainer(model, serialization_dir, train_loader, dev_loader)
             trainer.train()
 
-        predictor = ExtensiveLanguageModelPredictor(model, dataset_reader)
+        predictor = ExtensiveLanguageModelPredictor(model, self.reader)
         predictor.display_qualitative_model_test(quick_mode=True, probablistic=False)
-
-        return model, dataset_reader
+        print(predictor.predict_sentence('I want to'))
+        return model, self.reader
 
 
 if __name__ == "__main__":
+    stored_vocab = json.load(io.open(pathlib.Path('./vocab/vocab_imdb.json')))
+
+    vocab = Vocabulary(
+        {
+            'tokens': stored_vocab,
+            'labels': stored_vocab
+        },
+        min_count={
+            'tokens': 3,
+            'labels': 3,
+        },
+        oov_token=DEFAULT_OOV_TOKEN,
+    )
+    vocab.add_token_to_namespace(DEFAULT_OOV_TOKEN, 'labels')
+
     reader = ExtensiveLanguageModelReader(
         max_instances=MAX_SIZE,
         tokenizer=SpacyTokenizer(start_tokens=[START_SYMBOL]),
         sentence_splitter=SpacySentenceSplitter(),
         token_indexers=SingleIdTokenIndexer(lowercase_tokens=True),
+        vocab=vocab,
     )
-    runner = ExtensiveRunner(reader=reader, num_epochs=1)
+    runner = ExtensiveRunner(reader=reader, num_epochs=10, device='cuda')
+    model = None
+    dataset_reader = None
     for i in range(10):
-        model = None
-        model, dataset_reader = runner.run_training_loop(model)
+        model, dataset_reader = runner.run_training_loop(model, dataset_reader)
     predictor = ExtensiveLanguageModelPredictor(model, dataset_reader)
     predictor.display_qualitative_model_test(quick_mode=False, probablistic=False)
 # %%
