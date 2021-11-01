@@ -86,7 +86,7 @@ class ExtensiveRunner():
     def build_model(self, vocab: Vocabulary) -> Model:
         print("Building the model")
         vocab_size = vocab.get_vocab_size("tokens")
-        embedding_vector_size = 30
+        embedding_vector_size = 10
         embedder = BasicTextFieldEmbedder(
             {"tokens": Embedding(embedding_dim=embedding_vector_size, num_embeddings=vocab_size).to(self.device)})
         encoder = ExtensiveTCNEncoder(embedding_dims=(embedding_vector_size, 10, 10, 10), kernel_size=2)
@@ -154,8 +154,8 @@ if __name__ == "__main__":
             'labels': stored_vocab
         },
         min_count={
-            'tokens': 3,
-            'labels': 3,
+            'tokens': 2,
+            'labels': 2,
         },
         oov_token=DEFAULT_OOV_TOKEN,
     )
@@ -163,15 +163,16 @@ if __name__ == "__main__":
 
     reader = ExtensiveLanguageModelReader(
         max_instances=MAX_SIZE,
-        tokenizer=SpacyTokenizer(start_tokens=[START_SYMBOL]),
+        # tokenizer=SpacyTokenizer(start_tokens=[START_SYMBOL]),
+        tokenizer=SpacyTokenizer(),
         sentence_splitter=SpacySentenceSplitter(),
         token_indexers=SingleIdTokenIndexer(lowercase_tokens=True),
         vocab=vocab,
     )
-    runner = ExtensiveRunner(reader=reader, num_epochs=10, device='cuda')
+    runner = ExtensiveRunner(reader=reader, num_epochs=20, device='cuda')
     model = None
     dataset_reader = None
-    for i in range(10):
+    for i in range(2):
         model, dataset_reader = runner.run_training_loop(model, dataset_reader)
     predictor = ExtensiveLanguageModelPredictor(model, dataset_reader)
     predictor.display_qualitative_model_test(quick_mode=False, probablistic=False)

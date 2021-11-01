@@ -74,7 +74,7 @@ class ExtensiveLanguageModelPredictor(Predictor):
         for _ in range(max_len):
             all_class_probs = self.predict_json({"sentence": input_sentence})["class_probabilities"]
             probs = np.array([all_class_probs[-1]])
-            chosen_index = np.argmax(probs, axis=1)
+            chosen_index = np.argmax(probs, axis=1)[0]
             chosen_word = self._vocab.get_token_from_index(chosen_index, "labels")
             if chosen_word == self._vocab.get_token_from_index(final_token, "labels"):
                 break

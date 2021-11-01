@@ -24,6 +24,13 @@ class ResidualBlockModule(torch.nn.Module):
             stride=stride,
             dilation=dilation,
         )
+        self.conv1x1_2 = nn.Conv1d(
+            in_channels=out_emb_size,
+            out_channels=out_emb_size,
+            kernel_size=1,
+            stride=stride,
+            dilation=dilation,
+        )
         self.__padding = (kernel_size - 1) * dilation
         self.pad = nn.ZeroPad2d((self.__padding, 0))
         self.relu = nn.ReLU()

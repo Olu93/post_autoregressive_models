@@ -51,9 +51,9 @@ class ExtensiveLanguageModelReader(LanguageModelReader):
         ds = self.all_datasets.get(set_type)
 
         sentence_sets = (self.sentence_splitter.split_sentences(txt) for txt in ds)
-        lines = (self.tokenizer.tokenize(line) for sent in sentence_sets for line in sent)
+        lines = (self.tokenizer.tokenize(line.lower()) for sent in sentence_sets for line in sent)
         if set_type in [ExtensiveLanguageModelReader.TRAIN, ExtensiveLanguageModelReader.VAL]:
-            ds = (line for line in lines if len(line) > 2)
+            ds = (line[:random.randint(2, len(line))] for line in lines if len(line) > 5 for _ in range(3))
         if set_type in [ExtensiveLanguageModelReader.TEST]:
             ds = (line[:i] for line in lines for i in range(2, len(line)) if len(line) > 2)
         
@@ -62,6 +62,7 @@ class ExtensiveLanguageModelReader(LanguageModelReader):
     def _read(self, file_path: str) -> Iterable[Instance]:
         lines = self.load_dataset(file_path)
         for tokens in tqdm(lines):
+            # print(tokens)
             prev_words, next_words = tokens[:-1], tokens[1:]
             yield self.text_to_instance(prev_words, next_words)
 
